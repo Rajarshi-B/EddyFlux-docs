@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>&lt;no title&gt; &#8212; EddyFlux 2025 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=cb975c41"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="Explore_Grazing.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="HLS_Generate_NDVI.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <dl>
+<dt>{</dt><dd><dl>
+<dt>“cells”: [</dt><dd><dl>
+<dt>{</dt><dd><p>“cell_type”: “markdown”,
+“metadata”: {},
+“source”: [</p>
+<blockquote>
+<div><p>“# Load the netcdf, interpolate pixel to pixel”</p>
+</div></blockquote>
+<p>]</p>
+</dd>
+</dl>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import xarray as xrn”,
+“n”,
+“df = xr.open_dataset(‘NDVI_FSW.netcdf’)”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“df.keys()”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“df[‘time’]”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import xarray as xrn”,
+“import numpy as npn”,
+“import plotly.graph_objects as gon”,
+“n”,
+“# Load the NetCDF filen”,
+“file_path = ‘NDVI_FSW.netcdf’  # Update path if neededn”,
+“n”,
+“ds = xr.open_dataset(file_path)n”,
+“n”,
+“# Extract NDVI and coordinatesn”,
+“ndvi = ds[&quot;NDVI&quot;]n”,
+“times = ds[&quot;time&quot;].valuesn”,
+“x_coords = ds[&quot;x&quot;].valuesn”,
+“y_coords = ds[&quot;y&quot;].valuesn”,
+“n”,
+“# Create frames for the animationn”,
+“frames = []n”,
+“for i, t in enumerate(times):n”,
+“    frames.append(go.Frame(n”,
+“        data=[go.Heatmap(n”,
+“            z=ndvi[i].values,n”,
+“            x=x_coords,n”,
+“            y=y_coords,n”,
+“            colorscale=’Viridis’,n”,
+“            zmin=-1,n”,
+“            zmax=1,n”,
+“            colorbar=dict(title=’NDVI’)n”,
+“        )],n”,
+“        name=str(np.datetime_as_string(t, unit=’D’))n”,
+“    ))n”,
+“n”,
+“# Create the base figuren”,
+“fig = go.Figure(n”,
+“    data=frames[0].data,n”,
+“    layout=go.Layout(n”,
+“        title=’NDVI Heatmap Over Time’,n”,
+“        updatemenus=[dict(n”,
+“            type=’buttons’,n”,
+“            showactive=False,n”,
+“            buttons=[dict(label=’Play’,n”,
+“                          method=’animate’,n”,
+“                          args=[None, dict(frame=dict(duration=200, redraw=True),n”,
+“                                           fromcurrent=True, mode=’immediate’)])]n”,
+“        )],n”,
+“        sliders=[dict(n”,
+“            steps=[dict(method=’animate’,n”,
+“                        args=[[f.name], dict(mode=’immediate’,n”,
+“                                             frame=dict(duration=200, redraw=True),n”,
+“                                             fromcurrent=True)],n”,
+“                        label=f.name) for f in frames],n”,
+“            x=0.1,n”,
+“            xanchor=&quot;left&quot;,n”,
+“            y=0,n”,
+“            yanchor=&quot;top&quot;n”,
+“        )]n”,
+“    ),n”,
+“    frames=framesn”,
+“)n”,
+“n”,
+“fig.update_layout(n”,
+“    xaxis_title=&quot;X Coordinate&quot;,n”,
+“    yaxis_title=&quot;Y Coordinate&quot;n”,
+“)n”,
+“n”,
+“fig.show()”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import xarray as xrn”,
+“import pandas as pdn”,
+“import numpy as npn”,
+“import plotly.graph_objects as gon”,
+“n”,
+“# Load the NDVI datan”,
+“ds = xr.open_dataset(&quot;NDVI_HW_2022_23.netcdf&quot;)n”,
+“ndvi = ds[&quot;NDVI&quot;].load()n”,
+“n”,
+“# Two-step interpolationn”,
+“new_times = pd.date_range(&quot;2022-09-23 00:00:00&quot;, &quot;2023-12-31 23:30:00&quot;, freq=&quot;30min&quot;)n”,
+“n”,
+“n”,
+“# Interpolate and filln”,
+“ndvi_pixel_interp = ndvi.interp(time=new_times, method=&quot;linear&quot;)n”,
+“ndvi_interp_full = ndvi_pixel_interp.ffill(&quot;time&quot;).bfill(&quot;time&quot;)n”,
+“n”,
+“# Extract coordinates and timen”,
+“x_coords = ndvi_interp_full[&quot;x&quot;].valuesn”,
+“y_coords = ndvi_interp_full[&quot;y&quot;].valuesn”,
+“times = ndvi_interp_full[&quot;time&quot;].valuesn”,
+“n”,
+“# Sample every 48 time steps (i.e., 1 per day)n”,
+“sample_indices = np.arange(0, len(times), 48)n”,
+“n”,
+“# Create framesn”,
+“frames = []n”,
+“for i in sample_indices:n”,
+“    frames.append(go.Frame(n”,
+“        data=[go.Heatmap(n”,
+“            z=ndvi_interp_full[i].values,n”,
+“            x=x_coords,n”,
+“            y=y_coords,n”,
+“            colorscale=’Viridis’,n”,
+“            zmin=-1,n”,
+“            zmax=1,n”,
+“            colorbar=dict(title=’NDVI’)n”,
+“        )],n”,
+“        name=str(np.datetime_as_string(times[i], unit=’D’))n”,
+“    ))n”,
+“n”,
+“# Create the figuren”,
+“fig = go.Figure(n”,
+“    data=frames[0].data,n”,
+“    layout=go.Layout(n”,
+“        title=’NDVI Heatmap Over Time (Interpolated)’,n”,
+“        updatemenus=[dict(n”,
+“            type=’buttons’,n”,
+“            showactive=False,n”,
+“            buttons=[dict(label=’Play’,n”,
+“                          method=’animate’,n”,
+“                          args=[None, dict(frame=dict(duration=200, redraw=True),n”,
+“                                           fromcurrent=True, mode=’immediate’)])]n”,
+“        )],n”,
+“        sliders=[dict(n”,
+“            steps=[dict(method=’animate’,n”,
+“                        args=[[f.name], dict(mode=’immediate’,n”,
+“                                             frame=dict(duration=200, redraw=True),n”,
+“                                             fromcurrent=True)],n”,
+“                        label=f.name) for f in frames],n”,
+“            x=0.1,n”,
+“            xanchor=&quot;left&quot;,n”,
+“            y=0,n”,
+“            yanchor=&quot;top&quot;n”,
+“        )]n”,
+“    ),n”,
+“    frames=framesn”,
+“)n”,
+“n”,
+“fig.update_layout(n”,
+“    xaxis_title=&quot;X Coordinate&quot;,n”,
+“    yaxis_title=&quot;Y Coordinate&quot;n”,
+“)n”,
+“n”,
+“fig.show()”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“ndvi_interp_full.to_netcdf(‘NDVI_HW_interpolated_30min_2022_23.netcdf’)”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“ndvi_interp_full[‘y’]”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “markdown”,
+“metadata”: {},
+“source”: [</p>
+<blockquote>
+<div><p>“## Tower position as reference (0,0)”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import xarray as xrn”,
+“from pyproj import Transformern”,
+“n”,
+“# Load the NDVI datasetn”,
+“file_path = &quot;NDVI_HW_interpolated_30min_2022_23.netcdf&quot;  # Update this path if neededn”,
+“ds = xr.open_dataset(file_path)n”,
+“n”,
+“# Step 1: Extract original UTM x and y valuesn”,
+“x_vals = ds[&quot;x&quot;].valuesn”,
+“y_vals = ds[&quot;y&quot;].valuesn”,
+“n”,
+“# Step 2: Define reference point (latitude, longitude)n”,
+“ref_lat, ref_lon = 31.01651, -91.32409n”,
+“n”,
+“# Step 3: Convert reference lat/lon to UTM coordinates (Zone 15N)n”,
+“transformer = Transformer.from_crs(&quot;epsg:4326&quot;, &quot;epsg:32615&quot;, always_xy=True)n”,
+“ref_x, ref_y = transformer.transform(ref_lon, ref_lat)n”,
+“n”,
+“# Step 4: Compute relative distance from reference point (in meters)n”,
+“x_relative = x_vals - ref_xn”,
+“y_relative = y_vals - ref_yn”,
+“n”,
+“# Step 5: Add these new coordinates to the datasetn”,
+“ds = ds.assign_coords(x_meters_from_ref=(&quot;x&quot;, x_relative))n”,
+“ds = ds.assign_coords(y_meters_from_ref=(&quot;y&quot;, y_relative))n”,
+“n”,
+“# Optional: Inspect the new rangesn”,
+“print(&quot;X range (meters from ref):&quot;, x_relative.min(), &quot;to&quot;, x_relative.max())n”,
+“print(&quot;Y range (meters from ref):&quot;, y_relative.min(), &quot;to&quot;, y_relative.max())n”,
+“n”,
+“# Optional: Save updated datasetn”,
+“# ds.to_netcdf(&quot;ndvi_centered_from_ref.nc&quot;)”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“ds.keys”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import xarray as xrn”,
+“import pandas as pdn”,
+“import numpy as npn”,
+“import plotly.graph_objects as gon”,
+“n”,
+“# Load the NDVI datan”,
+“# ds = xr.open_dataset(&quot;NDVI_HE.netcdf&quot;)n”,
+“# ndvi = dsn”,
+“n”,
+“# Two-step interpolationn”,
+“# new_times = pd.date_range(&quot;2023-01-01&quot;, &quot;2023-12-31 23:30:00&quot;, freq=&quot;30min&quot;)n”,
+“n”,
+“n”,
+“# Interpolate and filln”,
+“# ndvi_pixel_interp = ndvi.interp(time=new_times, method=&quot;linear&quot;)n”,
+“# ndvi_interp_full = ndvi_pixel_interp.ffill(&quot;time&quot;).bfill(&quot;time&quot;)n”,
+“n”,
+“# Extract coordinates and timen”,
+“x_coords = ds[&quot;x_meters_from_ref&quot;].valuesn”,
+“y_coords = ds[&quot;y_meters_from_ref&quot;].valuesn”,
+“times = ds[&quot;time&quot;].valuesn”,
+“n”,
+“# Sample every 48 time steps (i.e., 1 per day)n”,
+“sample_indices = np.arange(0, len(times), 48)n”,
+“n”,
+“# Create framesn”,
+“frames = []n”,
+“for i in sample_indices:n”,
+“    frames.append(go.Frame(n”,
+“        data=[go.Heatmap(n”,
+“            z=ds[‘NDVI’][i].values,n”,
+“            x=x_coords,n”,
+“            y=y_coords,n”,
+“            colorscale=’Viridis’,n”,
+“            zmin=-1,n”,
+“            zmax=1,n”,
+“            colorbar=dict(title=’NDVI’)n”,
+“        )],n”,
+“        name=str(np.datetime_as_string(times[i], unit=’D’))n”,
+“    ))n”,
+“n”,
+“# Create the figuren”,
+“fig = go.Figure(n”,
+“    data=frames[0].data,n”,
+“    layout=go.Layout(n”,
+“        title=’NDVI Heatmap Over Time (Interpolated)’,n”,
+“        updatemenus=[dict(n”,
+“            type=’buttons’,n”,
+“            showactive=False,n”,
+“            buttons=[dict(label=’Play’,n”,
+“                          method=’animate’,n”,
+“                          args=[None, dict(frame=dict(duration=200, redraw=True),n”,
+“                                           fromcurrent=True, mode=’immediate’)])]n”,
+“        )],n”,
+“        sliders=[dict(n”,
+“            steps=[dict(method=’animate’,n”,
+“                        args=[[f.name], dict(mode=’immediate’,n”,
+“                                             frame=dict(duration=200, redraw=True),n”,
+“                                             fromcurrent=True)],n”,
+“                        label=f.name) for f in frames],n”,
+“            x=0.1,n”,
+“            xanchor=&quot;left&quot;,n”,
+“            y=0,n”,
+“            yanchor=&quot;top&quot;n”,
+“        )]n”,
+“    ),n”,
+“    frames=framesn”,
+“)n”,
+“n”,
+“fig.update_layout(n”,
+“    xaxis_title=&quot;X Coordinate&quot;,n”,
+“    yaxis_title=&quot;Y Coordinate&quot;n”,
+“)n”,
+“n”,
+“fig.show()n”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“ds.to_netcdf(‘ndvi_30min_HW_tower_coord_2022_23.netcdf’)”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“ds[‘time’][-1]”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “markdown”,
+“metadata”: {},
+“source”: [</p>
+<blockquote>
+<div><p>“# Plotting NDVI vs GPP”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import pandas as pdn”,
+“import xarray as xrn”,
+“import matplotlib.pyplot as pltn”,
+“n”,
+“# === Load GPP data ===n”,
+“gpp_df = pd.read_csv(&quot;Dataset_HE.csv&quot;, parse_dates=[&quot;TIMESTAMP&quot;], index_col=&quot;TIMESTAMP&quot;)n”,
+“gpp_df = gpp_df[[&quot;GPP&quot;]].dropna()n”,
+“gpp_2023 = gpp_df[&quot;2023-01-01&quot;:&quot;2023-12-31&quot;]n”,
+“n”,
+“# === Load NDVI data ===n”,
+“ndvi_ds = xr.open_dataset(&quot;ndvi_interp_30min_HE.netcdf&quot;)n”,
+“ndvi_mean = ndvi_ds[&quot;NDVI&quot;].mean(dim=[&quot;x&quot;, &quot;y&quot;])  # mean over fieldn”,
+“ndvi_mean_df = ndvi_mean.to_dataframe(name=&quot;NDVI&quot;).dropna()n”,
+“ndvi_resampled = ndvi_mean_df.resample(&quot;30T&quot;).mean()n”,
+“n”,
+“# === Resample GPP ===n”,
+“gpp_resampled = gpp_2023.resample(&quot;30T&quot;).mean()n”,
+“n”,
+“# === Daily aggregates ===n”,
+“daily_max_gpp = gpp_resampled.resample(&quot;D&quot;).mean()n”,
+“daily_mean_ndvi = ndvi_resampled.resample(&quot;D&quot;).median()n”,
+“n”,
+“# === Merge ===n”,
+“daily_combined = daily_max_gpp.join(daily_mean_ndvi, how=&quot;inner&quot;)n”,
+“n”,
+“# === Plot with dual axes ===n”,
+“fig, ax1 = plt.subplots(figsize=(15, 5))n”,
+“n”,
+“# Primary axis: GPPn”,
+“ax1.plot(daily_combined.index, daily_combined[&quot;GPP&quot;], label=&quot;Daily Max GPP&quot;, color=’tab:blue’)n”,
+“ax1.set_xlabel(&quot;Date&quot;)n”,
+“ax1.set_ylabel(&quot;Daily Max GPP&quot;, color=’tab:blue’)n”,
+“ax1.tick_params(axis=’y’, labelcolor=’tab:blue’)n”,
+“ax1.grid(True)n”,
+“n”,
+“# Secondary axis: NDVIn”,
+“ax2 = ax1.twinx()n”,
+“ax2.plot(daily_combined.index, daily_combined[&quot;NDVI&quot;], label=&quot;Daily Mean NDVI&quot;, color=’tab:green’)n”,
+“ax2.set_ylabel(&quot;Daily Mean NDVI&quot;, color=’tab:green’)n”,
+“ax2.tick_params(axis=’y’, labelcolor=’tab:green’)n”,
+“n”,
+“# Title and layoutn”,
+“plt.title(&quot;Daily Mean GPP and Daily Median NDVI - 2023 (Dual Axis)&quot;)n”,
+“fig.tight_layout()n”,
+“plt.show()”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import pandas as pdn”,
+“import xarray as xrn”,
+“import matplotlib.pyplot as pltn”,
+“n”,
+“# === Load GPP data ===n”,
+“gpp_df = pd.read_csv(&quot;Dataset_HE.csv&quot;, parse_dates=[&quot;STARTING_DATETIME&quot;], index_col=&quot;STARTING_DATETIME&quot;)n”,
+“gpp_df = gpp_df[[&quot;GPP&quot;]].dropna()n”,
+“gpp_2023 = gpp_df[&quot;2023-01-01&quot;:&quot;2023-12-31&quot;]n”,
+“n”,
+“# === Load NDVI data ===n”,
+“ndvi_ds = xr.open_dataset(&quot;ndvi_interp_30min_HE.netcdf&quot;)n”,
+“ndvi_mean = ndvi_ds[&quot;NDVI&quot;].median(dim=[&quot;x&quot;, &quot;y&quot;])  # mean over fieldn”,
+“ndvi_mean_df = ndvi_mean.to_dataframe(name=&quot;NDVI&quot;).dropna()n”,
+“ndvi_resampled = ndvi_mean_df.resample(&quot;30T&quot;).mean()n”,
+“n”,
+“# === Resample GPP ===n”,
+“gpp_resampled = gpp_2023.resample(&quot;30T&quot;).mean()n”,
+“n”,
+“# === Daily aggregates ===n”,
+“daily_max_gpp = gpp_resampled.resample(&quot;14D&quot;).mean()n”,
+“daily_mean_ndvi = ndvi_resampled.resample(&quot;14D&quot;).median()n”,
+“n”,
+“# === Merge ===n”,
+“daily_combined = daily_max_gpp.join(daily_mean_ndvi, how=&quot;inner&quot;)n”,
+“n”,
+“# === Plot with dual axes ===n”,
+“fig, ax1 = plt.subplots(figsize=(15, 5))n”,
+“n”,
+“# Primary axis: GPPn”,
+“ax1.plot(daily_combined.index, daily_combined[&quot;GPP&quot;], label=&quot;Daily Max GPP&quot;, color=’tab:blue’)n”,
+“ax1.set_xlabel(&quot;Date&quot;)n”,
+“ax1.set_ylabel(&quot;Daily Mean GPP&quot;, color=’tab:blue’)n”,
+“ax1.tick_params(axis=’y’, labelcolor=’tab:blue’)n”,
+“ax1.grid(True)n”,
+“n”,
+“# Secondary axis: NDVIn”,
+“ax2 = ax1.twinx()n”,
+“ax2.plot(daily_combined.index, daily_combined[&quot;NDVI&quot;], label=&quot;Daily Mean NDVI&quot;, color=’tab:green’)n”,
+“ax2.set_ylabel(&quot;Daily Mean NDVI&quot;, color=’tab:green’)n”,
+“ax2.tick_params(axis=’y’, labelcolor=’tab:green’)n”,
+“n”,
+“# Title and layoutn”,
+“plt.title(&quot;GPP vs NDVI - 2023 (14 Days Aggregated)&quot;)n”,
+“fig.tight_layout()n”,
+“plt.show()”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import pandas as pdn”,
+“import xarray as xrn”,
+“import matplotlib.pyplot as pltn”,
+“import numpy as npn”,
+“from scipy.stats import pearsonrn”,
+“n”,
+“# === Load GPP data ===n”,
+“gpp_df = pd.read_csv(&quot;Dataset_HE.csv&quot;, parse_dates=[&quot;STARTING_DATETIME&quot;], index_col=&quot;STARTING_DATETIME&quot;)n”,
+“gpp_df = gpp_df[[&quot;GPP&quot;]].dropna()n”,
+“gpp_2023 = gpp_df[&quot;2023-01-01&quot;:&quot;2023-12-31&quot;]n”,
+“n”,
+“# === Load NDVI data ===n”,
+“ndvi_ds = xr.open_dataset(&quot;ndvi_interp_30min_HE.netcdf&quot;)n”,
+“ndvi_mean = ndvi_ds[&quot;NDVI&quot;].median(dim=[&quot;x&quot;, &quot;y&quot;])  # mean over fieldn”,
+“ndvi_mean_df = ndvi_mean.to_dataframe(name=&quot;NDVI&quot;).dropna()n”,
+“ndvi_resampled = ndvi_mean_df.resample(&quot;30T&quot;).mean()n”,
+“n”,
+“# === Resample GPP ===n”,
+“gpp_resampled = gpp_2023.resample(&quot;30T&quot;).mean()n”,
+“n”,
+“# === Daily aggregates ===n”,
+“daily_max_gpp = gpp_resampled.resample(&quot;D&quot;).mean()n”,
+“daily_mean_ndvi = ndvi_resampled.resample(&quot;D&quot;).mean()n”,
+“n”,
+“# === Merge ===n”,
+“daily_combined = daily_max_gpp.join(daily_mean_ndvi, how=&quot;inner&quot;)n”,
+“n”,
+“# === Correlation ===n”,
+“corr, p_value = pearsonr(daily_combined[&quot;NDVI&quot;], daily_combined[&quot;GPP&quot;])n”,
+“n”,
+“# === Best fit line ===n”,
+“x = daily_combined[&quot;NDVI&quot;].valuesn”,
+“y = daily_combined[&quot;GPP&quot;].valuesn”,
+“slope, intercept = np.polyfit(x, y, deg=1)n”,
+“line = slope * x + interceptn”,
+“n”,
+“# === Scatter plot with best fit ===n”,
+“plt.figure(figsize=(8, 6))n”,
+“plt.scatter(x, y, alpha=0.6, label=&quot;Data points&quot;)n”,
+“plt.plot(x, line, color=&quot;red&quot;, linewidth=2, label=f&quot;Best fit line\ny = {slope:.2f}x + {intercept:.2f}&quot;)n”,
+“plt.xlabel(&quot;Daily mean NDVI (median over area)&quot;)n”,
+“plt.ylabel(&quot;Daily mean GPP micromol/m2/s&quot;)n”,
+“plt.title(f&quot;GPP vs NDVI (2023)\nPearson r = {corr:.2f}, p = {p_value:.2e}&quot;)n”,
+“plt.legend()n”,
+“plt.grid(True)n”,
+“plt.tight_layout()n”,
+“plt.show()”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import hvplot.xarrayn”,
+“import hvplot.pandas”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“# ndvi_ds.hvplot.box(‘NDVI’, by=[‘time’], rot=90, box_fill_color=’lightblue’, width=900, height=450).opts(ylim=(-0.5,1.5)).opts(title=’HE NDVI Timeseries’)”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import pandas as pdn”,
+“import xarray as xrn”,
+“import matplotlib.pyplot as pltn”,
+“n”,
+“# === Load GPP data ===n”,
+“gpp_df = pd.read_csv(&quot;Dataset_HE.csv&quot;, parse_dates=[&quot;TIMESTAMP&quot;], index_col=&quot;TIMESTAMP&quot;)n”,
+“gpp_df = gpp_df[[&quot;GPP&quot;]].dropna()n”,
+“gpp_2023 = gpp_df[&quot;2023-01-01&quot;:&quot;2023-12-31&quot;]n”,
+“n”,
+“# === Load NDVI data ===n”,
+“ndvi_ds = xr.open_dataset(&quot;ndvi_interp_30min_HE.netcdf&quot;)n”,
+“ndvi_mean = ndvi_ds[&quot;NDVI&quot;].mean(dim=[&quot;x&quot;, &quot;y&quot;])n”,
+“ndvi_mean_df = ndvi_mean.to_dataframe(name=&quot;NDVI&quot;).dropna()n”,
+“ndvi_resampled = ndvi_mean_df.resample(&quot;30T&quot;).mean()n”,
+“n”,
+“# === Resample GPP to match NDVI ===n”,
+“gpp_resampled = gpp_2023.resample(&quot;30T&quot;).mean()n”,
+“n”,
+“# === Daily Aggregates ===n”,
+“daily_max_gpp = gpp_resampled.resample(&quot;D&quot;).max()n”,
+“daily_mean_ndvi = ndvi_resampled.resample(&quot;D&quot;).mean()n”,
+“n”,
+“# === Merge ===n”,
+“daily_combined = daily_max_gpp.join(daily_mean_ndvi, how=&quot;inner&quot;)n”,
+“n”,
+“# === Apply 10-Day Rolling Mean on GPP ===n”,
+“daily_combined[&quot;GPP_10day_avg&quot;] = daily_combined[&quot;GPP&quot;].rolling(window=14, min_periods=1).mean()n”,
+“n”,
+“# === Plot with dual axes ===n”,
+“fig, ax1 = plt.subplots(figsize=(15, 5))n”,
+“n”,
+“# Left axis: Smoothed GPPn”,
+“ax1.plot(daily_combined.index, daily_combined[&quot;GPP_10day_avg&quot;], label=&quot;10-Day Rolling Avg GPP&quot;, color=’tab:blue’)n”,
+“ax1.set_xlabel(&quot;Date&quot;)n”,
+“ax1.set_ylabel(&quot;10-Day Avg GPP&quot;, color=’tab:blue’)n”,
+“ax1.tick_params(axis=’y’, labelcolor=’tab:blue’)n”,
+“ax1.grid(True)n”,
+“n”,
+“# Right axis: NDVIn”,
+“ax2 = ax1.twinx()n”,
+“ax2.plot(daily_combined.index, daily_combined[&quot;NDVI&quot;], label=&quot;Daily Mean NDVI&quot;, color=’tab:green’)n”,
+“ax2.set_ylabel(&quot;Daily Mean NDVI&quot;, color=’tab:green’)n”,
+“ax2.tick_params(axis=’y’, labelcolor=’tab:green’)n”,
+“n”,
+“# Title and layoutn”,
+“plt.title(&quot;14-Day Rolling Avg GPP and Daily Mean NDVI - 2023&quot;)n”,
+“fig.tight_layout()n”,
+“plt.show()”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“gpp_df”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: []</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “markdown”,
+“metadata”: {},
+“source”: [</p>
+<blockquote>
+<div><p>“# Overlay Grazing on NDVI”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import pandas as pdn”,
+“import xarray as xrn”,
+“import matplotlib.pyplot as pltn”,
+“n”,
+“# Load the CSV and NetCDF filesn”,
+“df_graze_raw = pd.read_csv(&quot;FSW_GRAZE_EFFECTED.csv&quot;)n”,
+“df_graze = df_graze_raw.rename(columns={‘STARTING_DATETIME’: ‘START_DATETIME’})n”,
+“df_graze[‘START_DATETIME’] = pd.to_datetime(df_graze[‘START_DATETIME’])n”,
+“n”,
+“# Filter only grazing-affected eventsn”,
+“df_graze_filtered = df_graze[df_graze_raw[‘GRAZING_EFFECTED’] == 1]n”,
+“n”,
+“# Drop duplicate grazing dates to avoid excessive vertical linesn”,
+“unique_graze_dates = df_graze_filtered[‘START_DATETIME’].drop_duplicates()n”,
+“n”,
+“# Load NDVI from NetCDFn”,
+“ds = xr.open_dataset(&quot;NDVI_Ferguson_only_grass_Interpolated.netcdf&quot;)n”,
+“ndvi_mean = ds[‘NDVI’].mean(dim=[‘x’, ‘y’])n”,
+“n”,
+“# Plottingn”,
+“plt.figure(figsize=(15, 5))n”,
+“ndvi_mean.plot(label=’Mean NDVI’, color=’green’)n”,
+“n”,
+“# Overlay vertical lines for unique grazing datesn”,
+“for date in unique_graze_dates:n”,
+“    plt.axvline(x=date, color=’red’, alpha=0.1)n”,
+“n”,
+“plt.title(‘Mean NDVI Time Series with Grazing-Affected Events’)n”,
+“plt.xlabel(‘Time’)n”,
+“plt.ylabel(‘Mean NDVI’)n”,
+“plt.legend()n”,
+“plt.grid(True)n”,
+“plt.tight_layout()n”,
+“plt.show()”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“df_graze_raw”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import xarray as xrn”,
+“n”,
+“df = xr.load_dataset(‘NDVI_Ferguson_only_grass_Interpolated.netcdf’)n”,
+“ndvi_mean = df[‘NDVI’].mean(dim=[‘x’, ‘y’])”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import matplotlib.pyplot as pltn”,
+“plt.plot(ndvi_mean)”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “markdown”,
+“metadata”: {},
+“source”: [</p>
+<blockquote>
+<div><p>“# Overlay Grazing on GPP”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“import pandas as pdn”,
+“import matplotlib.pyplot as pltn”,
+“n”,
+“# Load datasetn”,
+“dataset_fsw = pd.read_csv(&quot;Dataset_FNE.csv&quot;)n”,
+“dataset_fsw[‘TIMESTAMP’] = pd.to_datetime(dataset_fsw[‘TIMESTAMP’])n”,
+“n”,
+“# Load grazing start and end datesn”,
+“grazing_start = pd.read_parquet(&quot;Ferguson_start.parquet&quot;)n”,
+“grazing_end = pd.read_parquet(&quot;Ferguson_end.parquet&quot;)n”,
+“grazing_start[‘Time_30min’] = pd.to_datetime(grazing_start[‘Time_30min’])n”,
+“grazing_end[‘Time_30min’] = pd.to_datetime(grazing_end[‘Time_30min’])n”,
+“n”,
+“# Resample GPP to daily meann”,
+“daily_gpp = dataset_fsw.set_index(‘TIMESTAMP’).resample(‘D’).mean(numeric_only=True)[‘GPP’]n”,
+“daily_gpp_2023 = daily_gpp[daily_gpp.index.year == 2023]n”,
+“n”,
+“# Plot GPP time series with grazing periodsn”,
+“plt.figure(figsize=(15, 5))n”,
+“plt.plot(daily_gpp_2023.index, daily_gpp_2023.values, label=’Daily GPP (2023)’, color=’green’)n”,
+“n”,
+“# Overlay vertical lines for grazing periodsn”,
+“for start, end in zip(grazing_start[‘DATE’], grazing_end[‘DATE’]):n”,
+“    if start.year == 2023:n”,
+“        plt.axvspan(start, end, color=’gray’, alpha=0.3, label=’Grazing Period’ if start == grazing_start[‘Time_30min’].iloc[0] else &quot;&quot;)n”,
+“n”,
+“plt.xlabel(&quot;Date&quot;)n”,
+“plt.ylabel(&quot;GPP (µmol m⁻² s⁻¹)&quot;)n”,
+“plt.title(&quot;Daily GPP in 2023 with Grazing Periods (FSW)&quot;)n”,
+“plt.grid(True)n”,
+“plt.legend()n”,
+“plt.tight_layout()n”,
+“plt.show()”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“grazing_start = pd.read_parquet(&quot;Ferguson_start.parquet&quot;)n”,
+“grazing_end = pd.read_parquet(&quot;Ferguson_end.parquet&quot;)”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>},
+{</p>
+<blockquote>
+<div><p>“cell_type”: “code”,
+“execution_count”: null,
+“metadata”: {},
+“outputs”: [],
+“source”: [</p>
+<blockquote>
+<div><p>“grazing_start.columns”</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+<p>],
+“metadata”: {</p>
+<blockquote>
+<div><dl class="simple">
+<dt>“kernelspec”: {</dt><dd><p>“display_name”: “rb”,
+“language”: “python”,
+“name”: “python3”</p>
+</dd>
+</dl>
+<p>},
+“language_info”: {</p>
+<blockquote>
+<div><dl class="simple">
+<dt>“codemirror_mode”: {</dt><dd><p>“name”: “ipython”,
+“version”: 3</p>
+</dd>
+</dl>
+<p>},
+“file_extension”: “.py”,
+“mimetype”: “text/x-python”,
+“name”: “python”,
+“nbconvert_exporter”: “python”,
+“pygments_lexer”: “ipython3”,
+“version”: “3.10.17”</p>
+</div></blockquote>
+<p>}</p>
+</div></blockquote>
+<p>},
+“nbformat”: 4,
+“nbformat_minor”: 2</p>
+</dd>
+</dl>
+<p>}</p>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">EddyFlux</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="HLS_Generate_NDVI.html" title="previous chapter">&lt;no title&gt;</a></li>
+      <li>Next: <a href="Explore_Grazing.html" title="next chapter">&lt;no title&gt;</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, RajarshiB.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/notebooks/Interpolate_Plot_NDVI_vs_GPP.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

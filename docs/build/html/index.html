@@ -329,7 +329,96 @@
 </details></div>
 </details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
 <summary class="sd-summary-title sd-card-header">
-<span class="sd-summary-text">3. NEE_Modeling.ipynb</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<span class="sd-summary-text">3. Interpolate_Plot_NDVI_vs_GPP.ipynb</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">This notebook visualizes and compares daily aggregated NDVI (Normalized Difference Vegetation Index) and GPP (Gross Primary Productivity) from environmental observations over the year 2023. NDVI data is spatially averaged from a NetCDF dataset and GPP is derived from tower-based observations in a CSV file. The datasets are interpolated/resampled to 30-minute resolution and aggregated to daily scale for analysis.</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">1. Loading Required Libraries</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Several Python packages are imported for the workflow:</p>
+<ul class="simple">
+<li><p class="sd-card-text"><cite>xarray</cite>: For working with NDVI data stored in NetCDF format.</p></li>
+<li><p class="sd-card-text"><cite>pandas</cite>: For time series processing and resampling GPP.</p></li>
+<li><p class="sd-card-text"><cite>numpy</cite>: For numerical operations.</p></li>
+<li><p class="sd-card-text"><cite>matplotlib.pyplot</cite>: For dual-axis visualizations.</p></li>
+<li><p class="sd-card-text"><cite>plotly.graph_objects</cite>: For dynamic NDVI heatmaps.</p></li>
+</ul>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">2. Loading GPP Data from CSV</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">GPP is loaded from a flux tower dataset stored in a CSV file:</p>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">gpp_df</span> <span class="pre">=</span> <span class="pre">pd.read_csv(&quot;Dataset_HE.csv&quot;,</span> <span class="pre">parse_dates=[&quot;TIMESTAMP&quot;],</span> <span class="pre">index_col=&quot;TIMESTAMP&quot;)</span>
+<span class="pre">`</span></code></p>
+<ul class="simple">
+<li><p class="sd-card-text">The <cite>GPP</cite> column is extracted.</p></li>
+<li><p class="sd-card-text">Data is filtered to the year <strong>2023</strong>.</p></li>
+<li><p class="sd-card-text">Missing values are removed using <cite>.dropna()</cite>.</p></li>
+</ul>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3. Loading NDVI from NetCDF</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">NDVI data is loaded from a pre-interpolated NetCDF file:</p>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">ndvi_ds</span> <span class="pre">=</span> <span class="pre">xr.open_dataset(&quot;ndvi_interp_30min_HE.netcdf&quot;)</span>
+<span class="pre">`</span></code></p>
+<ul class="simple">
+<li><p class="sd-card-text">The NDVI variable is extracted and <strong>spatially averaged over all x and y coordinates</strong>.</p></li>
+<li><p class="sd-card-text">The result is converted to a pandas DataFrame and resampled to <strong>30-minute resolution</strong> using <cite>.resample(“30T”)</cite>.</p></li>
+</ul>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">4. Resampling and Aggregation</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<ul class="simple">
+<li><p class="sd-card-text">GPP is resampled to 30-minute intervals using <cite>.resample(“30T”).mean()</cite>.</p></li>
+<li><p class="sd-card-text">Both NDVI and GPP are <strong>aggregated to daily resolution</strong>:
+- NDVI: daily <strong>median</strong>
+- GPP: daily <strong>mean</strong></p></li>
+</ul>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">daily_max_gpp</span> <span class="pre">=</span> <span class="pre">gpp_resampled.resample(&quot;D&quot;).mean()</span>
+<span class="pre">daily_mean_ndvi</span> <span class="pre">=</span> <span class="pre">ndvi_resampled.resample(&quot;D&quot;).median()</span>
+<span class="pre">`</span></code></p>
+<p class="sd-card-text">These daily summaries are then merged on a common date index.</p>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">5. Plotting NDVI and GPP (Dual-Axis Plot)</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">A dual-axis line plot is created:</p>
+<ul class="simple">
+<li><p class="sd-card-text"><strong>Left Y-axis:</strong> Daily Max GPP (blue)</p></li>
+<li><p class="sd-card-text"><strong>Right Y-axis:</strong> Daily Mean NDVI (green)</p></li>
+</ul>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">fig,</span> <span class="pre">ax1</span> <span class="pre">=</span> <span class="pre">plt.subplots(figsize=(15,</span> <span class="pre">5))</span>
+<span class="pre">ax1.plot(...,</span> <span class="pre">color='tab:blue')</span>
+<span class="pre">ax2</span> <span class="pre">=</span> <span class="pre">ax1.twinx()</span>
+<span class="pre">ax2.plot(...,</span> <span class="pre">color='tab:green')</span>
+<span class="pre">`</span></code></p>
+<p class="sd-card-text">This plot helps reveal co-seasonal trends or potential phase lags between photosynthetic activity and vegetation greenness.</p>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">6. Summary and Applications</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">This notebook provides a comparative analysis of daily GPP and NDVI using tower and satellite data:</p>
+<ul class="simple">
+<li><p class="sd-card-text">NDVI is extracted from spatial remote sensing imagery.</p></li>
+<li><p class="sd-card-text">GPP is derived from in-situ measurements.</p></li>
+<li><p class="sd-card-text">Both datasets are harmonized at 30-minute intervals, and visualized on a daily scale.</p></li>
+</ul>
+<p class="sd-card-text"><strong>Applications:</strong></p>
+<ul class="simple">
+<li><p class="sd-card-text">Investigate seasonal patterns in vegetation productivity.</p></li>
+<li><p class="sd-card-text">Validate satellite-derived NDVI against flux-tower-derived carbon fluxes.</p></li>
+<li><p class="sd-card-text">Use for phenology tracking, crop monitoring, or carbon accounting studies.</p></li>
+</ul>
+</div>
+</details></div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">4. NEE_Modeling.ipynb</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
 <p class="sd-card-text">This notebook explores various modeling approaches for estimating Net Ecosystem Exchange (NEE) from eddy covariance data. It includes techniques ranging from mutual information analysis and symbolic regression to Gaussian processes and neural networks. The objective is to build interpretable and high-performing models that capture the directional influences of meteorological drivers on NEE.</p>
 <details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
 <summary class="sd-summary-title sd-card-header">

@@ -346,9 +346,96 @@ Notebook Summaries
       mean_ndvi.rio.to_raster("output/mean_NDVI.tif")
       mean_evi.rio.to_raster("output/mean_EVI.tif")
 
+.. dropdown:: 3. Interpolate_Plot_NDVI_vs_GPP.ipynb
+  :open:
+
+  This notebook visualizes and compares daily aggregated NDVI (Normalized Difference Vegetation Index) and GPP (Gross Primary Productivity) from environmental observations over the year 2023. NDVI data is spatially averaged from a NetCDF dataset and GPP is derived from tower-based observations in a CSV file. The datasets are interpolated/resampled to 30-minute resolution and aggregated to daily scale for analysis.
+
+  .. dropdown:: 1. Loading Required Libraries
+    :open:
+
+    Several Python packages are imported for the workflow:
+
+    - `xarray`: For working with NDVI data stored in NetCDF format.
+    - `pandas`: For time series processing and resampling GPP.
+    - `numpy`: For numerical operations.
+    - `matplotlib.pyplot`: For dual-axis visualizations.
+    - `plotly.graph_objects`: For dynamic NDVI heatmaps.
+
+  .. dropdown:: 2. Loading GPP Data from CSV
+    :open:
+
+    GPP is loaded from a flux tower dataset stored in a CSV file:
+
+    ```python
+    gpp_df = pd.read_csv("Dataset_HE.csv", parse_dates=["TIMESTAMP"], index_col="TIMESTAMP")
+    ```
+
+    - The `GPP` column is extracted.
+    - Data is filtered to the year **2023**.
+    - Missing values are removed using `.dropna()`.
+
+  .. dropdown:: 3. Loading NDVI from NetCDF
+    :open:
+
+    NDVI data is loaded from a pre-interpolated NetCDF file:
+
+    ```python
+    ndvi_ds = xr.open_dataset("ndvi_interp_30min_HE.netcdf")
+    ```
+
+    - The NDVI variable is extracted and **spatially averaged over all x and y coordinates**.
+    - The result is converted to a pandas DataFrame and resampled to **30-minute resolution** using `.resample("30T")`.
+
+  .. dropdown:: 4. Resampling and Aggregation
+    :open:
+
+    - GPP is resampled to 30-minute intervals using `.resample("30T").mean()`.
+    - Both NDVI and GPP are **aggregated to daily resolution**:
+      - NDVI: daily **median**
+      - GPP: daily **mean**
+
+    ```python
+    daily_max_gpp = gpp_resampled.resample("D").mean()
+    daily_mean_ndvi = ndvi_resampled.resample("D").median()
+    ```
+
+    These daily summaries are then merged on a common date index.
+
+  .. dropdown:: 5. Plotting NDVI and GPP (Dual-Axis Plot)
+    :open:
+
+    A dual-axis line plot is created:
+
+    - **Left Y-axis:** Daily Max GPP (blue)
+    - **Right Y-axis:** Daily Mean NDVI (green)
+
+    ```python
+    fig, ax1 = plt.subplots(figsize=(15, 5))
+    ax1.plot(..., color='tab:blue')
+    ax2 = ax1.twinx()
+    ax2.plot(..., color='tab:green')
+    ```
+
+    This plot helps reveal co-seasonal trends or potential phase lags between photosynthetic activity and vegetation greenness.
+
+  .. dropdown:: 6. Summary and Applications
+    :open:
+
+    This notebook provides a comparative analysis of daily GPP and NDVI using tower and satellite data:
+
+    - NDVI is extracted from spatial remote sensing imagery.
+    - GPP is derived from in-situ measurements.
+    - Both datasets are harmonized at 30-minute intervals, and visualized on a daily scale.
+
+    **Applications:**
+    
+    - Investigate seasonal patterns in vegetation productivity.
+    - Validate satellite-derived NDVI against flux-tower-derived carbon fluxes.
+    - Use for phenology tracking, crop monitoring, or carbon accounting studies.
 
 
-.. dropdown:: 3. NEE_Modeling.ipynb
+.. dropdown:: 4. NEE_Modeling.ipynb
   :open:
 
   This notebook explores various modeling approaches for estimating Net Ecosystem Exchange (NEE) from eddy covariance data. It includes techniques ranging from mutual information analysis and symbolic regression to Gaussian processes and neural networks. The objective is to build interpretable and high-performing models that capture the directional influences of meteorological drivers on NEE.

@@ -170,7 +170,164 @@
 </details></div>
 </details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
 <summary class="sd-summary-title sd-card-header">
-<span class="sd-summary-text">1. NEE_Modeling.ipynb</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<span class="sd-summary-text">2. HLS_Generate_NDVI.ipynb</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">This notebook walks through the complete workflow for generating <strong>NDVI (Normalized Difference Vegetation Index)</strong> and <strong>EVI (Enhanced Vegetation Index)</strong> maps from Harmonized Landsat and Sentinel (HLS) surface reflectance data. It demonstrates how to search for HLS data using NASA Earthdata, load selected spectral bands directly from cloud-hosted GeoTIFFs, apply spatial subsetting and quality filtering, compute NDVI/EVI, and export results as stacked time series or GeoTIFFs.</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">1. Background</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">The Harmonized Landsat and Sentinel (HLS) project provides surface reflectance products that merge Sentinel-2 and Landsat-8 observations at 30 m spatial resolution and ~2–3 day revisit. These are distributed as Cloud Optimized GeoTIFFs (COGs), allowing selective access to bands (e.g., Red, NIR, Blue) directly in the cloud.</p>
+<p class="sd-card-text">In this notebook, we use the cloud-native geospatial Python stack to:</p>
+<ul class="simple">
+<li><p class="sd-card-text">Query specific HLS granules using spatial and temporal filters</p></li>
+<li><p class="sd-card-text">Load and subset Red, NIR, and Blue bands</p></li>
+<li><p class="sd-card-text">Apply cloud masks using the Fmask layer</p></li>
+<li><p class="sd-card-text">Compute NDVI and EVI vegetation indices</p></li>
+<li><p class="sd-card-text">Stack multi-date raster scenes into a temporal composite</p></li>
+<li><p class="sd-card-text">Export GeoTIFFs and summary statistics for further analysis</p></li>
+</ul>
+<p class="sd-card-text"><strong>Vegetation Indices:</strong></p>
+<ul class="simple">
+<li><p class="sd-card-text"><strong>NDVI</strong> = (NIR - Red) / (NIR + Red): Indicates vegetation greenness.</p></li>
+<li><p class="sd-card-text"><strong>EVI</strong>  = 2.5 × (NIR - Red) / (NIR + 6×Red - 7.5×Blue + 1): More robust in high biomass or shadowed areas.</p></li>
+</ul>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">2. Getting Started</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">### 2.1 Import Packages</p>
+<p class="sd-card-text">Load required Python libraries for geospatial, visualization, and cloud access tasks.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">skimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">osgeo</span><span class="w"> </span><span class="kn">import</span> <span class="n">gdal</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">rioxarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">rxr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">hvplot.xarray</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">hvplot.pandas</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">earthaccess</span>
+</pre></div>
+</div>
+<p class="sd-card-text">### 2.2 Earthdata Login Authentication</p>
+<p class="sd-card-text">Use <cite>earthaccess</cite> to log in with your NASA Earthdata credentials.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">auth</span> <span class="o">=</span> <span class="n">earthaccess</span><span class="o">.</span><span class="n">login</span><span class="p">()</span>
+<span class="n">auth</span>
+</pre></div>
+</div>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3. Finding HLS Data</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Search for Sentinel-2 based HLS surface reflectance products over a region and time period of interest.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">results</span> <span class="o">=</span> <span class="n">earthaccess</span><span class="o">.</span><span class="n">search_data</span><span class="p">(</span>
+    <span class="n">short_name</span><span class="o">=</span><span class="s2">&quot;HLSS30&quot;</span><span class="p">,</span>
+    <span class="n">cloud_hosted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">bounding_box</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">106.623</span><span class="p">,</span> <span class="mf">35.056</span><span class="p">,</span> <span class="o">-</span><span class="mf">106.491</span><span class="p">,</span> <span class="mf">35.154</span><span class="p">),</span>
+    <span class="n">temporal</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;2021-04-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-11-01&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">4. Accessing HLS COG Data in the Cloud</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">### 4.1 Subset by Band</p>
+<p class="sd-card-text">Load URLs for individual bands needed for NDVI/EVI calculation: Red (B04), NIR (B8A), Blue (B02), and Fmask.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">assets</span> <span class="o">=</span> <span class="n">earthaccess</span><span class="o">.</span><span class="n">load_asset_urls</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">asset_types</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;B04&quot;</span><span class="p">,</span> <span class="s2">&quot;B8A&quot;</span><span class="p">,</span> <span class="s2">&quot;B02&quot;</span><span class="p">,</span> <span class="s2">&quot;Fmask&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p class="sd-card-text">### 4.2 View Browse Image</p>
+<p class="sd-card-text">Visual preview of scene using <cite>browse</cite> URL.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">io</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">assets</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;browse&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p class="sd-card-text">### 4.3 Load COGs into Memory</p>
+<p class="sd-card-text">Read bands into memory using <cite>rioxarray</cite>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">red</span> <span class="o">=</span> <span class="n">rxr</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="n">assets</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;B04&quot;</span><span class="p">],</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+<span class="n">nir</span> <span class="o">=</span> <span class="n">rxr</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="n">assets</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;B8A&quot;</span><span class="p">],</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+<span class="n">blue</span> <span class="o">=</span> <span class="n">rxr</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="n">assets</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;B02&quot;</span><span class="p">],</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+<span class="n">fmask</span> <span class="o">=</span> <span class="n">rxr</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="n">assets</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;Fmask&quot;</span><span class="p">],</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+</pre></div>
+</div>
+<p class="sd-card-text">### 4.4 Subset Spatially</p>
+<p class="sd-card-text">Clip raster bands to a shapefile-defined area of interest.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">boundary</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;data/boundary.shp&quot;</span><span class="p">)</span>
+<span class="n">red_clip</span> <span class="o">=</span> <span class="n">red</span><span class="o">.</span><span class="n">rio</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">boundary</span><span class="o">.</span><span class="n">geometry</span><span class="p">,</span> <span class="n">boundary</span><span class="o">.</span><span class="n">crs</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sd-card-text">### 4.5 Apply Scale Factor</p>
+<p class="sd-card-text">Convert reflectance values to real scale by dividing by 10,000.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">red_scaled</span> <span class="o">=</span> <span class="n">red_clip</span> <span class="o">/</span> <span class="mi">10000</span>
+<span class="n">nir_scaled</span> <span class="o">=</span> <span class="n">nir_clip</span> <span class="o">/</span> <span class="mi">10000</span>
+<span class="n">blue_scaled</span> <span class="o">=</span> <span class="n">blue_clip</span> <span class="o">/</span> <span class="mi">10000</span>
+</pre></div>
+</div>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">5. Processing HLS Data</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">### 5.1 Calculate NDVI and EVI</p>
+<p class="sd-card-text">Compute both vegetation indices for comparison and flexibility.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ndvi</span> <span class="o">=</span> <span class="p">(</span><span class="n">nir_scaled</span> <span class="o">-</span> <span class="n">red_scaled</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">nir_scaled</span> <span class="o">+</span> <span class="n">red_scaled</span><span class="p">)</span>
+<span class="n">evi</span> <span class="o">=</span> <span class="mf">2.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">nir_scaled</span> <span class="o">-</span> <span class="n">red_scaled</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">nir_scaled</span> <span class="o">+</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">red_scaled</span> <span class="o">-</span> <span class="mf">7.5</span> <span class="o">*</span> <span class="n">blue_scaled</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sd-card-text">NDVI is more widely used and interpretable for general vegetation mapping, while EVI performs better in dense canopies or when atmospheric noise is high.</p>
+<p class="sd-card-text">### 5.2 Quality Filtering</p>
+<p class="sd-card-text">Use Fmask to remove cloudy or shadowed pixels:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mask</span> <span class="o">=</span> <span class="n">fmask_clip</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">fmask_clip</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">fmask_clip</span> <span class="o">==</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">ndvi_filtered</span> <span class="o">=</span> <span class="n">ndvi</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+<span class="n">evi_filtered</span> <span class="o">=</span> <span class="n">evi</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sd-card-text">### 5.3 Export to COG</p>
+<p class="sd-card-text">Save results to GeoTIFF format for GIS or web map usage.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ndvi_filtered</span><span class="o">.</span><span class="n">rio</span><span class="o">.</span><span class="n">to_raster</span><span class="p">(</span><span class="s2">&quot;output/NDVI.tif&quot;</span><span class="p">)</span>
+<span class="n">evi_filtered</span><span class="o">.</span><span class="n">rio</span><span class="o">.</span><span class="n">to_raster</span><span class="p">(</span><span class="s2">&quot;output/EVI.tif&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">6. Automation</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Batch process multiple scenes by looping through assets for each date, applying the same steps (load → clip → scale → compute → filter → export) to produce NDVI and EVI time series.</p>
+<p class="sd-card-text">This supports applications like seasonal monitoring, crop stress analysis, or vegetation phenology studies.</p>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">7. Stacking HLS Data</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">### 7.1 Open and Stack COGs</p>
+<p class="sd-card-text">Combine all exported NDVI or EVI files into one time-aware <cite>xarray.DataArray</cite> for temporal analysis.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">stack_ndvi</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">rxr</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span> <span class="k">for</span> <span class="n">fp</span> <span class="ow">in</span> <span class="n">ndvi_filepaths</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
+<span class="n">stack_evi</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">rxr</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span> <span class="k">for</span> <span class="n">fp</span> <span class="ow">in</span> <span class="n">evi_filepaths</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sd-card-text">### 7.2 Visualize Stacked Time Series</p>
+<p class="sd-card-text">View how NDVI or EVI evolves over time across your AOI.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">stack_ndvi</span><span class="o">.</span><span class="n">hvplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">groupby</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;YlGn&#39;</span><span class="p">)</span>
+<span class="n">stack_evi</span><span class="o">.</span><span class="n">hvplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">groupby</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">8. Export Statistics</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Compute spatial statistics such as mean or maximum NDVI/EVI across time and export for reporting or machine learning.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mean_ndvi</span> <span class="o">=</span> <span class="n">stack_ndvi</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+<span class="n">mean_evi</span> <span class="o">=</span> <span class="n">stack_evi</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+
+<span class="n">mean_ndvi</span><span class="o">.</span><span class="n">rio</span><span class="o">.</span><span class="n">to_raster</span><span class="p">(</span><span class="s2">&quot;output/mean_NDVI.tif&quot;</span><span class="p">)</span>
+<span class="n">mean_evi</span><span class="o">.</span><span class="n">rio</span><span class="o">.</span><span class="n">to_raster</span><span class="p">(</span><span class="s2">&quot;output/mean_EVI.tif&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details></div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3. NEE_Modeling.ipynb</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
 <p class="sd-card-text">This notebook explores various modeling approaches for estimating Net Ecosystem Exchange (NEE) from eddy covariance data. It includes techniques ranging from mutual information analysis and symbolic regression to Gaussian processes and neural networks. The objective is to build interpretable and high-performing models that capture the directional influences of meteorological drivers on NEE.</p>
 <details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
 <summary class="sd-summary-title sd-card-header">

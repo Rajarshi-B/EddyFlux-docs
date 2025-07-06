@@ -147,7 +147,202 @@ Notebook Summaries
 
         plt.plot(GPM['time'], GPM['precip'])
 
-.. dropdown:: 1. NEE_Modeling.ipynb
+.. dropdown:: 2. HLS_Generate_NDVI.ipynb
+  :open:
+
+  This notebook walks through the complete workflow for generating **NDVI (Normalized Difference Vegetation Index)** and **EVI (Enhanced Vegetation Index)** maps from Harmonized Landsat and Sentinel (HLS) surface reflectance data. It demonstrates how to search for HLS data using NASA Earthdata, load selected spectral bands directly from cloud-hosted GeoTIFFs, apply spatial subsetting and quality filtering, compute NDVI/EVI, and export results as stacked time series or GeoTIFFs.
+
+  .. dropdown:: 1. Background
+    :open:
+
+    The Harmonized Landsat and Sentinel (HLS) project provides surface reflectance products that merge Sentinel-2 and Landsat-8 observations at 30 m spatial resolution and ~2–3 day revisit. These are distributed as Cloud Optimized GeoTIFFs (COGs), allowing selective access to bands (e.g., Red, NIR, Blue) directly in the cloud.
+
+    In this notebook, we use the cloud-native geospatial Python stack to:
+
+    - Query specific HLS granules using spatial and temporal filters
+    - Load and subset Red, NIR, and Blue bands
+    - Apply cloud masks using the Fmask layer
+    - Compute NDVI and EVI vegetation indices
+    - Stack multi-date raster scenes into a temporal composite
+    - Export GeoTIFFs and summary statistics for further analysis
+
+    **Vegetation Indices:**
+
+    - **NDVI** = (NIR - Red) / (NIR + Red): Indicates vegetation greenness.
+    - **EVI**  = 2.5 × (NIR - Red) / (NIR + 6×Red - 7.5×Blue + 1): More robust in high biomass or shadowed areas.
+
+  .. dropdown:: 2. Getting Started
+    :open:
+
+    ### 2.1 Import Packages
+
+    Load required Python libraries for geospatial, visualization, and cloud access tasks.
+
+    .. code-block:: python
+
+      import os
+      from datetime import datetime
+      import numpy as np
+      import pandas as pd
+      import geopandas as gp
+      from skimage import io
+      import matplotlib.pyplot as plt
+      from osgeo import gdal
+      import xarray as xr
+      import rioxarray as rxr
+      import hvplot.xarray
+      import hvplot.pandas
+      import earthaccess
+
+    ### 2.2 Earthdata Login Authentication
+
+    Use `earthaccess` to log in with your NASA Earthdata credentials.
+
+    .. code-block:: python
+
+      auth = earthaccess.login()
+      auth
+
+  .. dropdown:: 3. Finding HLS Data
+    :open:
+
+    Search for Sentinel-2 based HLS surface reflectance products over a region and time period of interest.
+
+    .. code-block:: python
+
+      results = earthaccess.search_data(
+          short_name="HLSS30",
+          cloud_hosted=True,
+          bounding_box=(-106.623, 35.056, -106.491, 35.154),
+          temporal=("2021-04-01", "2021-11-01")
+      )
+
+  .. dropdown:: 4. Accessing HLS COG Data in the Cloud
+    :open:
+
+    ### 4.1 Subset by Band
+
+    Load URLs for individual bands needed for NDVI/EVI calculation: Red (B04), NIR (B8A), Blue (B02), and Fmask.
+
+    .. code-block:: python
+
+      assets = earthaccess.load_asset_urls(results, asset_types=["B04", "B8A", "B02", "Fmask"])
+
+    ### 4.2 View Browse Image
+
+    Visual preview of scene using `browse` URL.
+
+    .. code-block:: python
+
+      io.imshow(assets[0]["browse"])
+
+    ### 4.3 Load COGs into Memory
+
+    Read bands into memory using `rioxarray`.
+
+    .. code-block:: python
+
+      red = rxr.open_rasterio(assets[0]["B04"], masked=True).squeeze()
+      nir = rxr.open_rasterio(assets[0]["B8A"], masked=True).squeeze()
+      blue = rxr.open_rasterio(assets[0]["B02"], masked=True).squeeze()
+      fmask = rxr.open_rasterio(assets[0]["Fmask"], masked=True).squeeze()
+
+    ### 4.4 Subset Spatially
+
+    Clip raster bands to a shapefile-defined area of interest.
+
+    .. code-block:: python
+
+      boundary = gp.read_file("data/boundary.shp")
+      red_clip = red.rio.clip(boundary.geometry, boundary.crs, drop=True)
+
+    ### 4.5 Apply Scale Factor
+
+    Convert reflectance values to real scale by dividing by 10,000.
+
+    .. code-block:: python
+
+      red_scaled = red_clip / 10000
+      nir_scaled = nir_clip / 10000
+      blue_scaled = blue_clip / 10000
+
+  .. dropdown:: 5. Processing HLS Data
+    :open:
+
+    ### 5.1 Calculate NDVI and EVI
+
+    Compute both vegetation indices for comparison and flexibility.
+
+    .. code-block:: python
+
+      ndvi = (nir_scaled - red_scaled) / (nir_scaled + red_scaled)
+      evi = 2.5 * (nir_scaled - red_scaled) / (nir_scaled + 6 * red_scaled - 7.5 * blue_scaled + 1)
+
+    NDVI is more widely used and interpretable for general vegetation mapping, while EVI performs better in dense canopies or when atmospheric noise is high.
+
+    ### 5.2 Quality Filtering
+
+    Use Fmask to remove cloudy or shadowed pixels:
+
+    .. code-block:: python
+
+      mask = fmask_clip.where((fmask_clip == 0) | (fmask_clip == 1))
+      ndvi_filtered = ndvi.where(mask)
+      evi_filtered = evi.where(mask)
+
+    ### 5.3 Export to COG
+
+    Save results to GeoTIFF format for GIS or web map usage.
+
+    .. code-block:: python
+
+      ndvi_filtered.rio.to_raster("output/NDVI.tif")
+      evi_filtered.rio.to_raster("output/EVI.tif")
+
+  .. dropdown:: 6. Automation
+    :open:
+
+    Batch process multiple scenes by looping through assets for each date, applying the same steps (load → clip → scale → compute → filter → export) to produce NDVI and EVI time series.
+
+    This supports applications like seasonal monitoring, crop stress analysis, or vegetation phenology studies.
+
+  .. dropdown:: 7. Stacking HLS Data
+    :open:
+
+    ### 7.1 Open and Stack COGs
+
+    Combine all exported NDVI or EVI files into one time-aware `xarray.DataArray` for temporal analysis.
+
+    .. code-block:: python
+
+      stack_ndvi = xr.concat([rxr.open_rasterio(fp) for fp in ndvi_filepaths], dim="time")
+      stack_evi = xr.concat([rxr.open_rasterio(fp) for fp in evi_filepaths], dim="time")
+
+    ### 7.2 Visualize Stacked Time Series
+
+    View how NDVI or EVI evolves over time across your AOI.
+
+    .. code-block:: python
+
+      stack_ndvi.hvplot(x='x', y='y', groupby='time', cmap='YlGn')
+      stack_evi.hvplot(x='x', y='y', groupby='time', cmap='viridis')
+
+  .. dropdown:: 8. Export Statistics
+    :open:
+
+    Compute spatial statistics such as mean or maximum NDVI/EVI across time and export for reporting or machine learning.
+
+    .. code-block:: python
+
+      mean_ndvi = stack_ndvi.mean(dim='time')
+      mean_evi = stack_evi.mean(dim='time')
+
+      mean_ndvi.rio.to_raster("output/mean_NDVI.tif")
+      mean_evi.rio.to_raster("output/mean_EVI.tif")
+
+
+
+.. dropdown:: 3. NEE_Modeling.ipynb
   :open:
 
   This notebook explores various modeling approaches for estimating Net Ecosystem Exchange (NEE) from eddy covariance data. It includes techniques ranging from mutual information analysis and symbolic regression to Gaussian processes and neural networks. The objective is to build interpretable and high-performing models that capture the directional influences of meteorological drivers on NEE.

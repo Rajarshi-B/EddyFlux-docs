@@ -386,7 +386,7 @@ Notebook Summaries
 
     .. code-block:: python
 
-      ref_lat, ref_lon = 31.01651, -91.32409
+      ref_lat, ref_lon = 21.01651, -61.82409
       transformer = Transformer.from_crs("epsg:4326", "epsg:32615", always_xy=True)
       ref_x, ref_y = transformer.transform(ref_lon, ref_lat)
 

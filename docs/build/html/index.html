@@ -38,15 +38,15 @@
 <h1>EddyFlux Documentation<a class="headerlink" href="#eddyflux-documentation" title="Link to this heading">¶</a></h1>
 <p>This project focuses on exploring and modeling Net Ecosystem Exchange (NEE) using eddy covariance data. It includes:</p>
 <ul class="simple">
-<li><p>Explore_Dataset.ipynb opens the Eddy Covariance Dataset and visualizes it.</p></li>
-<li><p>If NDVI is required as a feature then HLS_Generate_NDVI.ipynb and Interpolate_Plot_NDVI_vs_GPP.ipynb notebooks are required, else directly start with NEE_Modelling.ipynb. If modeling is run without NDVI, mostly ‘preds_without_corr’ variable needs to be modified.</p>
+<li><p><strong>Explore_Dataset.ipynb</strong> opens the Eddy Covariance Dataset and visualizes it.</p></li>
+<li><p>If NDVI is required as a feature then <strong>HLS_Generate_NDVI.ipynb</strong> and <strong>Interpolate_Plot_NDVI_vs_GPP.ipynb</strong> notebooks are required, else directly start with NEE_Modelling.ipynb. If modeling is run without NDVI, mostly ‘preds_without_corr’ variable needs to be modified.</p>
 <ul>
-<li><p>HLS_Generate_NDVI.ipynb needs a boundary-geometry (geojson file, eg from <a class="reference external" href="https://geojson.io/">https://geojson.io/</a>) within which NDVI it extracts the satellite derived NDVI.</p></li>
-<li><p>Interpolate_Plot_NDVI_vs_GPP.ipynb interpolates the sparse NDVI data(generated from HLS_Generate_NDVI.ipynb) to 30 min resolution and visualizes alongside GPP.</p></li>
+<li><p><strong>HLS_Generate_NDVI.ipynb</strong> needs a boundary-geometry (geojson file, eg from <a class="reference external" href="https://geojson.io/">https://geojson.io/</a>) within which NDVI it extracts the satellite derived NDVI.</p></li>
+<li><p><strong>Interpolate_Plot_NDVI_vs_GPP.ipynb</strong> interpolates the sparse NDVI data(generated from HLS_Generate_NDVI.ipynb) to 30 min resolution and visualizes alongside GPP.</p></li>
 </ul>
 </li>
-<li><p>NEE_Modelling.ipynb finds the most important features and fits various machine learning model finds optimum hyperparameters.</p></li>
-<li><p>Explore_Grazing.ipynb finds the impact of grazing ungrazed vs grazed scenarios using machine learning models. Random forest is used but can be extended to other models easily.</p></li>
+<li><p><strong>NEE_Modelling.ipynb</strong> finds the most important features and fits various machine learning model finds optimum hyperparameters.</p></li>
+<li><p><strong>Explore_Grazing.ipynb</strong> finds the impact of grazing ungrazed vs grazed scenarios using machine learning models. Random forest is used but can be extended to other models easily.</p></li>
 </ul>
 <section id="notebook-summaries">
 <h2>Notebook Summaries<a class="headerlink" href="#notebook-summaries" title="Link to this heading">¶</a></h2>

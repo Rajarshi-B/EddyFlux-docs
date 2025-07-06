@@ -10,13 +10,15 @@ This project focuses on exploring and modeling Net Ecosystem Exchange (NEE) usin
 
 - Explore_Dataset.ipynb opens the Eddy Covariance Dataset and visualizes it.
 
-- HLS_Generate_NDVI.ipynb needs a boundary-geometry (geojson file) within which NDVI it extracts the satellite derived NDVI.
+- If NDVI is required as a feature then HLS_Generate_NDVI.ipynb and Interpolate_Plot_NDVI_vs_GPP.ipynb notebooks are required, else directly start with NEE_Modelling.ipynb. If modeling is run without NDVI, mostly 'preds_without_corr' variable needs to be modified.
 
-- Interpolate_Plot_NDVI_vs_GPP.ipynb interpolates the sparse NDVI data to 30 min resolution and visualizes alongside GPP.
+  - HLS_Generate_NDVI.ipynb needs a boundary-geometry (geojson file, eg from https://geojson.io/) within which NDVI it extracts the satellite derived NDVI.
 
-- NEE_Modelling.ipynb finds the most important features and fits various machine learning model/tunes them.
+  - Interpolate_Plot_NDVI_vs_GPP.ipynb interpolates the sparse NDVI data(generated from HLS_Generate_NDVI.ipynb) to 30 min resolution and visualizes alongside GPP.
 
-- Explore_Grazing.ipynb finds the impact of grazing ungrazed vs grazed scenarios using machine learning models.
+- NEE_Modelling.ipynb finds the most important features and fits various machine learning model finds optimum hyperparameters.
+
+- Explore_Grazing.ipynb finds the impact of grazing ungrazed vs grazed scenarios using machine learning models. Random forest is used but can be extended to other models easily.
 
 Notebook Summaries
 -------------------

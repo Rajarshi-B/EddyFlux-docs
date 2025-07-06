@@ -19,7 +19,8 @@ extensions = [
     'myst_parser',
     'sphinx.ext.mathjax',
     'sphinx.ext.autodoc',
-    'sphinx.ext.viewcode'
+    'sphinx.ext.viewcode',
+    'sphinx_design'
 ]
 
 # Optional: If you're using .md or .rst alongside

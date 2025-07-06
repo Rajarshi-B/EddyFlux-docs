@@ -8,9 +8,15 @@ EddyFlux Documentation
 
 This project focuses on exploring and modeling Net Ecosystem Exchange (NEE) using eddy covariance data. It includes:
 
-- Visual analysis of flux and meteorological variables
-- Feature selection and symbolic modeling techniques
-- Predictive modeling of NEE using advanced ML methods
+- Explore_Dataset.ipynb opens the Eddy Covariance Dataset and visualizes it.
+
+- HLS_Generate_NDVI.ipynb needs a boundary-geometry (geojson file) within which NDVI it extracts the satellite derived NDVI.
+
+- Interpolate_Plot_NDVI_vs_GPP.ipynb interpolates the sparse NDVI data to 30 min resolution and visualizes alongside GPP.
+
+- NEE_Modelling.ipynb finds the most important features and fits various machine learning model/tunes them.
+
+- Explore_Grazing.ipynb finds the impact of grazing ungrazed vs grazed scenarios using machine learning models.
 
 Notebook Summaries
 -------------------

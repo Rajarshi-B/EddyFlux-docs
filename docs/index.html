@@ -9,9 +9,11 @@
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
     <script src="_static/documentation_options.js?v=cb975c41"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -42,27 +44,131 @@
 </ul>
 <section id="notebook-summaries">
 <h2>Notebook Summaries<a class="headerlink" href="#notebook-summaries" title="Link to this heading">¶</a></h2>
-<p><strong>1. Explore_Dataset.ipynb</strong>
-This notebook focuses on data loading, format conversion to <cite>parquet</cite>, and comprehensive visual exploration of environmental drivers of CO₂ flux. Key steps include:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">1. Explore_Dataset.ipynb</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">This notebook performs exploratory data analysis (EDA) on eddy covariance datasets. The goal is to prepare the data for modeling Net Ecosystem Exchange (NEE) by cleaning, transforming, and visualizing relevant variables.</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">1. Loading the Data</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">The dataset, originally in Excel format, is loaded using <cite>pandas.ExcelFile</cite>. Each sheet represents data from a different tower site.</p>
+<p class="sd-card-text">Key steps:
+- Load each sheet into a DataFrame
+- Inspect columns, datatypes, and record counts</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">file</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelFile</span><span class="p">(</span><span class="s1">&#39;Data_Quanterra.xls&#39;</span><span class="p">)</span>
+<span class="n">df_HurstWest</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;HurstWest&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sd-card-text">Metadata such as column count and structure is printed using <cite>.info()</cite> and <cite>.columns</cite>.</p>
+</div>
+</details><p class="sd-card-text">—</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">2. Saving as Parquet for Efficient I/O</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">To improve I/O speed, the large Excel files are converted to <cite>.parquet</cite> format. This also standardizes time columns using a helper function based on literature.</p>
+<p class="sd-card-text">Highlights:
+- Datetime formatting
+- Feature extraction (hour, DOY)
+- Data type enforcement (e.g., float conversion)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df_FergusonNE</span> <span class="o">=</span> <span class="n">add_time_vars</span><span class="p">(</span><span class="n">df_FergusonNE</span><span class="p">,</span> <span class="s1">&#39;MIDPOINT_DATETIME&#39;</span><span class="p">)</span>
+<span class="n">df_HurstWest</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="s1">&#39;HurstWest.parquet&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details><p class="sd-card-text">—</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3. Visualizing the Data &amp; Finding Predictors</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">This section visualizes key flux and meteorological variables and looks for meaningful patterns.</p>
+</div>
+</details><p class="sd-card-text">—</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3.1 Visualizing NEE</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
 <ul class="simple">
-<li><p>Histograms and time series plots of NEE</p></li>
-<li><p>Comparisons across towers and time periods</p></li>
-<li><p>Diurnal patterns in soil/air temperature, radiation, and evapotranspiration</p></li>
-<li><p>Analysis of radiation balance and GPP vs RECO</p></li>
-<li><p>Correlation matrix construction</p></li>
-<li><p>Principal Component Analysis (PCA)</p></li>
-<li><p>Integration of external datasets such as GPM precipitation</p></li>
+<li><p class="sd-card-text">Histogram and time-series plots of NEE</p></li>
+<li><p class="sd-card-text">Checking for yearly transitions or gaps</p></li>
+<li><p class="sd-card-text">Comparison of NEE across towers</p></li>
 </ul>
-<p><strong>2. NEE_Modeling.ipynb</strong>
-This notebook develops predictive models for NEE based on selected environmental features. Highlights include:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">HE</span><span class="p">[</span><span class="s1">&#39;TIMESTAMP&#39;</span><span class="p">],</span> <span class="n">HE</span><span class="p">[</span><span class="s1">&#39;NEE&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</details><p class="sd-card-text">—</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3.2 Temperature and Radiation Effects</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
 <ul class="simple">
-<li><p>Directional analysis of shortwave radiation</p></li>
-<li><p>Mutual information-based feature relevance ranking</p></li>
-<li><p>Use of symbolic regression to derive interpretable NEE equations</p></li>
-<li><p>Deployment of Kolmogorov–Arnold Networks (KANs) to discover symbolic nonlinear patterns</p></li>
-<li><p>Several complex, interpretable expressions approximating NEE from multiple variables (e.g., VPD, Ta, RH, SW, etc.)</p></li>
+<li><p class="sd-card-text">Examine air/soil temperature and shortwave/longwave radiation</p></li>
+<li><p class="sd-card-text">Net radiation calculated as:
+<cite>Net Radiation = Incoming - Outgoing</cite></p></li>
 </ul>
-<div class="toctree-wrapper compound">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">HE</span><span class="p">[</span><span class="s1">&#39;NET_RAD&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">HE</span><span class="p">[</span><span class="s1">&#39;SW_IN&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">HE</span><span class="p">[</span><span class="s1">&#39;SW_OUT&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</details><p class="sd-card-text">—</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3.3 Ecosystem Respiration and GPP</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<ul class="simple">
+<li><p class="sd-card-text">Seasonal and diurnal analysis of RECO and GPP</p></li>
+<li><p class="sd-card-text">Function of soil temperature and light availability</p></li>
+</ul>
+<p class="sd-card-text">Questions posed:
+- How is RECO calculated?
+- What explains variation in ET and LE?</p>
+</div>
+</details><p class="sd-card-text">—</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3.4 Evapotranspiration Calculations</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<ul class="simple">
+<li><p class="sd-card-text">Evapotranspiration is derived from latent heat flux:
+<cite>ET = LE / λ</cite></p></li>
+<li><p class="sd-card-text">The latent heat of vaporization is temperature dependent</p></li>
+</ul>
+<p class="sd-card-text">Referenced method:
+[StackExchange explanation on latent heat](<a class="reference external" href="https://earthscience.stackexchange.com/questions/20733">https://earthscience.stackexchange.com/questions/20733</a>)</p>
+</div>
+</details><p class="sd-card-text">—</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3.5 Correlation Matrix</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<ul class="simple">
+<li><p class="sd-card-text">Mean correlation plots across variables</p></li>
+<li><p class="sd-card-text">Special attention to: VPD, RH, Air Temp</p></li>
+</ul>
+<p class="sd-card-text">VPD = ( e_s - e ), where ( e_s ) is from Clausius-Clapeyron relation.</p>
+</div>
+</details><p class="sd-card-text">—</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3.6 Principal Component Analysis (PCA)</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<ul class="simple">
+<li><p class="sd-card-text">PCA is applied to reduce dimensionality and interpret variable groupings.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.decomposition</span><span class="w"> </span><span class="kn">import</span> <span class="n">PCA</span>
+<span class="n">pca</span> <span class="o">=</span> <span class="n">PCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">pca</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">numeric_columns</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</details><p class="sd-card-text">—</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3.7 External Precipitation Data</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<ul class="simple">
+<li><p class="sd-card-text">Plots daily precipitation from GPM</p></li>
+<li><p class="sd-card-text">Compared with soil/air moisture</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">GPM</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">GPM</span><span class="p">[</span><span class="s1">&#39;precip&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</details></div>
+</details><div class="toctree-wrapper compound">
 </div>
 </section>
 </section>

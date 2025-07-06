@@ -13,3 +13,5 @@ RUN pip install --no-cache-dir \
     ipykernel \
     ipython \
     sphinx-rtd-theme
+
+RUN pip install sphinx-design

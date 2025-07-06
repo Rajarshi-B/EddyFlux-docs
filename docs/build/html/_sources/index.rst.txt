@@ -686,6 +686,131 @@ Notebook Summaries
       :open:
 
       Plots and diagnostics showing modeled NEE time series and residuals for final visualization and interpretation.
+.. dropdown:: 5. Explore_Grazing.ipynb
+  :open:
+
+  This notebook evaluates the impact of **grazing management** (presence vs. absence of grazing) on **Net Ecosystem Exchange (NEE)** using Random Forest regression models. It uses eddy covariance tower data, meteorological predictors, and grazing period metadata to compare predicted cumulative NEE across grazed and ungrazed scenarios.
+
+  .. dropdown:: 1. Objective
+    :open:
+
+    The goal is to quantify how grazing influences the cumulative carbon fluxes at different sites by:
+    
+    - Isolating grazing-affected periods
+    - Training machine learning models separately on grazed and ungrazed data
+    - Comparing cumulative modeled NEE between the two cases
+
+  .. dropdown:: 2. Load Grazing Metadata
+    :open:
+
+    Grazing start and end dates are loaded from `.parquet` files for two sites (Ferguson and Hurst), separated into multiple growing seasons.
+
+    .. code-block:: python
+
+      Ferguson_start = pd.read_parquet('Ferguson_start.parquet')
+      Ferguson_end = pd.read_parquet('Ferguson_end.parquet')
+      Hurst_start = pd.read_parquet('Hurst_start.parquet')
+      Hurst_end = pd.read_parquet('Hurst_end.parquet')
+
+  .. dropdown:: 3. Labeling Grazing-Affected Days
+    :open:
+
+    A Boolean column `GRAZING_EFFECTED` is created in the main DataFrame `DF`, marking days that fall within or shortly after grazing events (defined by `graze_effected_margin`).
+
+    .. code-block:: python
+
+      graze_effected_margin = 4
+      for i in range(len(DF)):
+          for j in range(len(graze_start)):
+              if graze_start.loc[j, 'DOY'] <= DF.loc[i, 'DOY'] <= graze_end.loc[j, 'DOY'] + graze_effected_margin:
+                  DF.loc[i, 'GRAZING_EFFECTED'] = True
+                  break
+              else:
+                  DF.loc[i, 'GRAZING_EFFECTED'] = False
+
+  .. dropdown:: 4. Define Model and Hyperparameters
+    :open:
+
+    A pre-optimized Random Forest configuration (`best_rf`) is used to maintain consistency across experiments. The model is evaluated across 20 different random seeds to assess uncertainty.
+
+    .. code-block:: python
+
+      best_rf = {
+          'max_depth': 14,
+          'max_features': 0.50,
+          'min_samples_leaf': 2,
+          'min_samples_split': 4,
+          'n_estimators': 264
+      }
+      random_states = np.linspace(1, 200, 20, dtype=int)
+
+  .. dropdown:: 5. Train Models (Grazing Excluded)
+    :open:
+
+    Only data **not** affected by grazing (`GRAZING_EFFECTED == False`) is used to train the model. This forms the control group (baseline flux conditions). The model predicts NEE flux and its cumulative integral.
+
+    .. code-block:: python
+
+      DF_2 = DF[DF['GRAZING_EFFECTED'] == False].copy()
+      pred_MAT = DF_2[DF_2['NET_CARBON_DIOXIDE_FLUX_FLAG'] == 0][preds_after_corr]
+      target_var = DF_2[DF_2['NET_CARBON_DIOXIDE_FLUX_FLAG'] == 0]['NET_CARBON_DIOXIDE_FLUX']
+
+      for rs in random_states:
+          model = RandomForestRegressor(**best_rf, random_state=rs, n_jobs=32)
+          X_train, X_test, Y_train, Y_test = train_test_split(pred_MAT, target_var, train_size=0.8, random_state=rs)
+          scaler = StandardScaler()
+          X_train_scaled = scaler.fit_transform(X_train)
+          model.fit(X_train_scaled, Y_train)
+          DF[f'Preds_grazing_excluded_NEE_cumulative_{rs}'] = model.predict(scaler.transform(DF[preds_after_corr])).cumsum().shift(1)
+
+  .. dropdown:: 6. Train Models (Grazing Included)
+    :open:
+
+    The same model and procedure are applied on the full dataset (including grazing-affected days). This allows for quantifying the effect of grazing by comparing against the control.
+
+    .. code-block:: python
+
+      DF_2 = DF.copy()
+      pred_MAT = DF_2[DF_2['NET_CARBON_DIOXIDE_FLUX_FLAG'] == 0][preds_after_corr]
+      target_var = DF_2[DF_2['NET_CARBON_DIOXIDE_FLUX_FLAG'] == 0]['NET_CARBON_DIOXIDE_FLUX']
+
+      for rs in random_states:
+          model = RandomForestRegressor(**best_rf, random_state=rs, n_jobs=32)
+          X_train, X_test, Y_train, Y_test = train_test_split(pred_MAT, target_var, train_size=0.8, random_state=rs)
+          scaler = StandardScaler()
+          X_train_scaled = scaler.fit_transform(X_train)
+          model.fit(X_train_scaled, Y_train)
+          DF[f'Preds_grazing_included_NEE_cumulative_{rs}'] = model.predict(scaler.transform(DF[preds_after_corr])).cumsum().shift(1)
+
+  .. dropdown:: 7. Visualization and Interpretation
+    :open:
+
+    Cumulative NEE curves are plotted for both model variants:
+    
+    - **Blue curves**: Excluded grazing
+    - **Red curves**: Included grazing
+    - A 2-σ (standard deviation) shaded envelope is added around each mean curve
+    - **Dotted vertical lines** indicate the start and end of grazing events
+    - **Black dashed line**: observed NEE as reference
+
+    .. code-block:: python
+
+      plt.plot(DF['Time'], mean_cumulative_excluded, 'b-', label='Mean Grazing Excluded')
+      plt.fill_between(DF['Time'], lower_excluded, upper_excluded, color='blue', alpha=0.2)
+      plt.plot(DF['Time'], mean_cumulative_included, 'r-', label='Mean Grazing Included')
+      plt.fill_between(DF['Time'], lower_included, upper_included, color='red', alpha=0.2)
+      plt.plot(DF['Time'], DF['NEE '], 'k--', label='Observed NEE')
+      for t in graze_start['Time_30min']:
+          plt.axvline(x=t, color='blue', linestyle='dotted')
+      for t in graze_end['Time_30min']:
+          plt.axvline(x=t, color='red', linestyle='dotted')
+
+  .. dropdown:: 8. Conclusion
+    :open:
+
+    The notebook provides a counterfactual modeling approach to infer grazing impact. By isolating grazing-free periods, a baseline NEE can be generated, and deviations from it (under grazing) can be attributed to management practices.
+
+    This approach is especially valuable in carbon offset and ecological impact assessments where direct experimentation is infeasible.
 
 
 .. toctree::

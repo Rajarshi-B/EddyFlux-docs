@@ -661,6 +661,127 @@
 </div>
 </details></div>
 </details></div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">5. Explore_Grazing.ipynb</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">This notebook evaluates the impact of <strong>grazing management</strong> (presence vs. absence of grazing) on <strong>Net Ecosystem Exchange (NEE)</strong> using Random Forest regression models. It uses eddy covariance tower data, meteorological predictors, and grazing period metadata to compare predicted cumulative NEE across grazed and ungrazed scenarios.</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">1. Objective</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">The goal is to quantify how grazing influences the cumulative carbon fluxes at different sites by:</p>
+<ul class="simple">
+<li><p class="sd-card-text">Isolating grazing-affected periods</p></li>
+<li><p class="sd-card-text">Training machine learning models separately on grazed and ungrazed data</p></li>
+<li><p class="sd-card-text">Comparing cumulative modeled NEE between the two cases</p></li>
+</ul>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">2. Load Grazing Metadata</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Grazing start and end dates are loaded from <cite>.parquet</cite> files for two sites (Ferguson and Hurst), separated into multiple growing seasons.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Ferguson_start</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s1">&#39;Ferguson_start.parquet&#39;</span><span class="p">)</span>
+<span class="n">Ferguson_end</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s1">&#39;Ferguson_end.parquet&#39;</span><span class="p">)</span>
+<span class="n">Hurst_start</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s1">&#39;Hurst_start.parquet&#39;</span><span class="p">)</span>
+<span class="n">Hurst_end</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s1">&#39;Hurst_end.parquet&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">3. Labeling Grazing-Affected Days</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">A Boolean column <cite>GRAZING_EFFECTED</cite> is created in the main DataFrame <cite>DF</cite>, marking days that fall within or shortly after grazing events (defined by <cite>graze_effected_margin</cite>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graze_effected_margin</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">DF</span><span class="p">)):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">graze_start</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">graze_start</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="s1">&#39;DOY&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">DF</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;DOY&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">graze_end</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="s1">&#39;DOY&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">graze_effected_margin</span><span class="p">:</span>
+            <span class="n">DF</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;GRAZING_EFFECTED&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">DF</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;GRAZING_EFFECTED&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+</div>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">4. Define Model and Hyperparameters</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">A pre-optimized Random Forest configuration (<cite>best_rf</cite>) is used to maintain consistency across experiments. The model is evaluated across 20 different random seeds to assess uncertainty.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">best_rf</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;max_depth&#39;</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span>
+    <span class="s1">&#39;max_features&#39;</span><span class="p">:</span> <span class="mf">0.50</span><span class="p">,</span>
+    <span class="s1">&#39;min_samples_leaf&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s1">&#39;min_samples_split&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s1">&#39;n_estimators&#39;</span><span class="p">:</span> <span class="mi">264</span>
+<span class="p">}</span>
+<span class="n">random_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">5. Train Models (Grazing Excluded)</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Only data <strong>not</strong> affected by grazing (<cite>GRAZING_EFFECTED == False</cite>) is used to train the model. This forms the control group (baseline flux conditions). The model predicts NEE flux and its cumulative integral.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">DF_2</span> <span class="o">=</span> <span class="n">DF</span><span class="p">[</span><span class="n">DF</span><span class="p">[</span><span class="s1">&#39;GRAZING_EFFECTED&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">pred_MAT</span> <span class="o">=</span> <span class="n">DF_2</span><span class="p">[</span><span class="n">DF_2</span><span class="p">[</span><span class="s1">&#39;NET_CARBON_DIOXIDE_FLUX_FLAG&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">][</span><span class="n">preds_after_corr</span><span class="p">]</span>
+<span class="n">target_var</span> <span class="o">=</span> <span class="n">DF_2</span><span class="p">[</span><span class="n">DF_2</span><span class="p">[</span><span class="s1">&#39;NET_CARBON_DIOXIDE_FLUX_FLAG&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">][</span><span class="s1">&#39;NET_CARBON_DIOXIDE_FLUX&#39;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">rs</span> <span class="ow">in</span> <span class="n">random_states</span><span class="p">:</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(</span><span class="o">**</span><span class="n">best_rf</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">rs</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">,</span> <span class="n">Y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">pred_MAT</span><span class="p">,</span> <span class="n">target_var</span><span class="p">,</span> <span class="n">train_size</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">rs</span><span class="p">)</span>
+    <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+    <span class="n">X_train_scaled</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train_scaled</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">)</span>
+    <span class="n">DF</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;Preds_grazing_excluded_NEE_cumulative_</span><span class="si">{</span><span class="n">rs</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">DF</span><span class="p">[</span><span class="n">preds_after_corr</span><span class="p">]))</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">6. Train Models (Grazing Included)</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">The same model and procedure are applied on the full dataset (including grazing-affected days). This allows for quantifying the effect of grazing by comparing against the control.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">DF_2</span> <span class="o">=</span> <span class="n">DF</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">pred_MAT</span> <span class="o">=</span> <span class="n">DF_2</span><span class="p">[</span><span class="n">DF_2</span><span class="p">[</span><span class="s1">&#39;NET_CARBON_DIOXIDE_FLUX_FLAG&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">][</span><span class="n">preds_after_corr</span><span class="p">]</span>
+<span class="n">target_var</span> <span class="o">=</span> <span class="n">DF_2</span><span class="p">[</span><span class="n">DF_2</span><span class="p">[</span><span class="s1">&#39;NET_CARBON_DIOXIDE_FLUX_FLAG&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">][</span><span class="s1">&#39;NET_CARBON_DIOXIDE_FLUX&#39;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">rs</span> <span class="ow">in</span> <span class="n">random_states</span><span class="p">:</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(</span><span class="o">**</span><span class="n">best_rf</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">rs</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">,</span> <span class="n">Y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">pred_MAT</span><span class="p">,</span> <span class="n">target_var</span><span class="p">,</span> <span class="n">train_size</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">rs</span><span class="p">)</span>
+    <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+    <span class="n">X_train_scaled</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train_scaled</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">)</span>
+    <span class="n">DF</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;Preds_grazing_included_NEE_cumulative_</span><span class="si">{</span><span class="n">rs</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">DF</span><span class="p">[</span><span class="n">preds_after_corr</span><span class="p">]))</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">7. Visualization and Interpretation</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Cumulative NEE curves are plotted for both model variants:</p>
+<ul class="simple">
+<li><p class="sd-card-text"><strong>Blue curves</strong>: Excluded grazing</p></li>
+<li><p class="sd-card-text"><strong>Red curves</strong>: Included grazing</p></li>
+<li><p class="sd-card-text">A 2-σ (standard deviation) shaded envelope is added around each mean curve</p></li>
+<li><p class="sd-card-text"><strong>Dotted vertical lines</strong> indicate the start and end of grazing events</p></li>
+<li><p class="sd-card-text"><strong>Black dashed line</strong>: observed NEE as reference</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">DF</span><span class="p">[</span><span class="s1">&#39;Time&#39;</span><span class="p">],</span> <span class="n">mean_cumulative_excluded</span><span class="p">,</span> <span class="s1">&#39;b-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Mean Grazing Excluded&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">DF</span><span class="p">[</span><span class="s1">&#39;Time&#39;</span><span class="p">],</span> <span class="n">lower_excluded</span><span class="p">,</span> <span class="n">upper_excluded</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">DF</span><span class="p">[</span><span class="s1">&#39;Time&#39;</span><span class="p">],</span> <span class="n">mean_cumulative_included</span><span class="p">,</span> <span class="s1">&#39;r-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Mean Grazing Included&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">DF</span><span class="p">[</span><span class="s1">&#39;Time&#39;</span><span class="p">],</span> <span class="n">lower_included</span><span class="p">,</span> <span class="n">upper_included</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">DF</span><span class="p">[</span><span class="s1">&#39;Time&#39;</span><span class="p">],</span> <span class="n">DF</span><span class="p">[</span><span class="s1">&#39;NEE &#39;</span><span class="p">],</span> <span class="s1">&#39;k--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Observed NEE&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">graze_start</span><span class="p">[</span><span class="s1">&#39;Time_30min&#39;</span><span class="p">]:</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dotted&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">graze_end</span><span class="p">[</span><span class="s1">&#39;Time_30min&#39;</span><span class="p">]:</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dotted&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3" open="open">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">8. Conclusion</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">The notebook provides a counterfactual modeling approach to infer grazing impact. By isolating grazing-free periods, a baseline NEE can be generated, and deviations from it (under grazing) can be attributed to management practices.</p>
+<p class="sd-card-text">This approach is especially valuable in carbon offset and ecological impact assessments where direct experimentation is infeasible.</p>
+</div>
+</details></div>
 </details><div class="toctree-wrapper compound">
 </div>
 </section>
